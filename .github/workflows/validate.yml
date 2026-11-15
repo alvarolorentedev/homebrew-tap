@@ -1,0 +1,85 @@
+name: Validate casks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-casks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate Homebrew casks
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Run updater unit tests
+        run: python3 -m unittest discover -s scripts/tests -v
+
+      - name: Check Ruby syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cask in Casks/*.rb; do
+            echo "Checking syntax: ${cask}"
+            if ! ruby -c "${cask}"; then
+              echo "::error file=${cask}::Ruby syntax check failed"
+              exit 1
+            fi
+          done
+
+      - name: Register tap for namespaced audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          tap_dir="$(brew --repository)/Library/Taps/alvarolorentedev/homebrew-tap"
+          rm -rf "${tap_dir}"
+          mkdir -p "$(dirname "${tap_dir}")"
+          ln -s "${GITHUB_WORKSPACE}" "${tap_dir}"
+          if ! brew tap | grep -qx "alvarolorentedev/tap"; then
+            echo "::error::Homebrew did not register the tap at ${tap_dir}"
+            exit 1
+          fi
+          # Homebrew 7+ refuses to load casks from untrusted third-party taps.
+          if brew trust --help >/dev/null 2>&1; then
+            brew trust --tap alvarolorentedev/tap
+          fi
+
+      - name: Audit casks
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! brew audit --cask --strict --online \
+            alvarolorentedev/tap/mountee \
+            alvarolorentedev/tap/opencode-cloudlink \
+            alvarolorentedev/tap/barklarm; then
+            echo "::error::Homebrew cask audit failed. See the output above."
+            exit 1
+          fi
+
+      - name: Check cask style
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! brew style Casks/*.rb; then
+            echo "::error::Homebrew cask style check failed. See the output above."
+            exit 1
+          fi

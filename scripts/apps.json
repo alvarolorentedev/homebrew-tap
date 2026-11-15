@@ -1,0 +1,22 @@
+{
+  "apps": [
+    {
+      "name": "mountee",
+      "repo": "alvarolorentedev/mountee",
+      "cask": "Casks/mountee.rb",
+      "asset": "Mountee.dmg"
+    },
+    {
+      "name": "opencode-cloudlink",
+      "repo": "alvarolorentedev/opencode-cloud-link-releases",
+      "cask": "Casks/opencode-cloudlink.rb",
+      "asset": "opencode-cloudlink_darwin_universal.dmg"
+    },
+    {
+      "name": "barklarm",
+      "repo": "alvarolorentedev/barklarm-app",
+      "cask": "Casks/barklarm.rb",
+      "asset": "barklarm-{version}-arm64.dmg"
+    }
+  ]
+}

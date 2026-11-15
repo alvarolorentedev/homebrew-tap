@@ -1,0 +1,131 @@
+name: Update casks
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-casks
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: Update casks from GitHub Releases
+    runs-on: macos-latest
+    timeout-minutes: 45
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Run updater unit tests
+        run: python3 -m unittest discover -s scripts/tests -v
+
+      - name: Update casks
+        id: update
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          summary="${RUNNER_TEMP}/cask-update.json"
+          python3 scripts/update_casks.py --summary-json "${summary}"
+          if [ -z "$(git status --porcelain -- Casks)" ]; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+          echo "changed=true" >> "${GITHUB_OUTPUT}"
+          python3 - "${summary}" <<'PY' >> "${GITHUB_OUTPUT}"
+          import json
+          import sys
+
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          print(f"title={data['title']}")
+          print("body<<CASK_UPDATE_BODY")
+          print(data["body"])
+          print("CASK_UPDATE_BODY")
+          PY
+
+      # Pull requests opened with GITHUB_TOKEN do not trigger pull_request
+      # workflows, so the same checks run here before the PR is proposed.
+      - name: Check Ruby syntax
+        if: steps.update.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for cask in Casks/*.rb; do
+            echo "Checking syntax: ${cask}"
+            if ! ruby -c "${cask}"; then
+              echo "::error file=${cask}::Ruby syntax check failed"
+              exit 1
+            fi
+          done
+
+      - name: Register tap for namespaced audit
+        if: steps.update.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          tap_dir="$(brew --repository)/Library/Taps/alvarolorentedev/homebrew-tap"
+          rm -rf "${tap_dir}"
+          mkdir -p "$(dirname "${tap_dir}")"
+          ln -s "${GITHUB_WORKSPACE}" "${tap_dir}"
+          if ! brew tap | grep -qx "alvarolorentedev/tap"; then
+            echo "::error::Homebrew did not register the tap at ${tap_dir}"
+            exit 1
+          fi
+          # Homebrew 7+ refuses to load casks from untrusted third-party taps.
+          if brew trust --help >/dev/null 2>&1; then
+            brew trust --tap alvarolorentedev/tap
+          fi
+
+      - name: Audit casks
+        if: steps.update.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! brew audit --cask --strict --online \
+            alvarolorentedev/tap/mountee \
+            alvarolorentedev/tap/opencode-cloudlink \
+            alvarolorentedev/tap/barklarm; then
+            echo "::error::Homebrew cask audit failed. See the output above."
+            exit 1
+          fi
+
+      - name: Check cask style
+        if: steps.update.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! brew style Casks/*.rb; then
+            echo "::error::Homebrew cask style check failed. See the output above."
+            exit 1
+          fi
+
+      - name: Create or update pull request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          base: main
+          branch: chore/homebrew-cask-updates
+          delete-branch: false
+          add-paths: Casks
+          commit-message: ${{ steps.update.outputs.title }}
+          title: ${{ steps.update.outputs.title }}
+          body: ${{ steps.update.outputs.body }}
