@@ -14,8 +14,13 @@ brew install --cask alvarolorentedev/tap/opencode-cloudlink
 brew install --cask alvarolorentedev/tap/barklarm
 ```
 
-> **Homebrew 7 and later:** if Homebrew refuses the tap as untrusted, run
-> `brew trust --tap alvarolorentedev/tap` once before installing.
+### Homebrew 7 or later
+
+If Homebrew refuses the tap as untrusted, trust it once before installing:
+
+```bash
+brew trust --tap alvarolorentedev/tap
+```
 
 ## Applications
 
@@ -104,6 +109,9 @@ and on demand. It runs the updater tests, validates the casks with
 pull request. It never merges automatically. Because pull requests created with
 `GITHUB_TOKEN` do not trigger ordinary `pull_request` workflows, validation runs
 inside the update workflow before the pull request is proposed.
+
+For maintainers, the repository must allow GitHub Actions to create pull
+requests under **Settings → Actions → General → Workflow permissions**.
 
 ## Validate locally
 
