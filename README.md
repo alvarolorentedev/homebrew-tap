@@ -43,9 +43,7 @@ its own signed updater, so the cask declares `auto_updates true`.
 
 ### Barklarm
 
-Barklarm is published as an Apple Silicon DMG. The installer places the app in a
-`barklarm` folder inside the disk image; the cask installs `barklarm.app` from
-that folder.
+Barklarm is published as an Apple Silicon DMG and installs `barklarm.app`.
 
 ## Upgrade
 

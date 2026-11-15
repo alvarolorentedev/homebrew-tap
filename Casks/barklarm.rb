@@ -16,7 +16,7 @@ cask "barklarm" do
   depends_on arch: :arm64
   depends_on :macos
 
-  app "barklarm/barklarm.app"
+  app "barklarm.app"
 
   uninstall quit: "com.electron.barklarm"
 end
