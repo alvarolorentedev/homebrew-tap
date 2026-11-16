@@ -16,7 +16,7 @@
       "name": "barklarm",
       "repo": "alvarolorentedev/barklarm-app",
       "cask": "Casks/barklarm.rb",
-      "asset": "barklarm-{version}-arm64.dmg"
+      "asset": "Barklarm_{version}_aarch64.dmg"
     }
   ]
 }

@@ -1,8 +1,8 @@
 cask "barklarm" do
-  version "2.4.8"
-  sha256 "7c33c90420d5fbb705fb336edf736eb9a9a9957feb02ee648d9e26f9ec24a82a"
+  version "3.0.0"
+  sha256 "4f839f665fc273854ae802c3c7a99147df703166e7634dc441ae9a997872acf2"
 
-  url "https://github.com/alvarolorentedev/barklarm-app/releases/download/v#{version}/barklarm-#{version}-arm64.dmg"
+  url "https://github.com/alvarolorentedev/barklarm-app/releases/download/v#{version}/Barklarm_#{version}_aarch64.dmg"
   name "Barklarm"
   desc "Build and observability monitoring application"
   homepage "https://www.barklarm.com/"
@@ -16,7 +16,7 @@ cask "barklarm" do
   depends_on arch: :arm64
   depends_on :macos
 
-  app "barklarm.app"
+  app "Barklarm.app"
 
-  uninstall quit: "com.electron.barklarm"
+  uninstall quit: "dev.barklarm.app"
 end

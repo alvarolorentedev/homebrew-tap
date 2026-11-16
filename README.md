@@ -48,7 +48,7 @@ its own signed updater, so the cask declares `auto_updates true`.
 
 ### Barklarm
 
-Barklarm is published as an Apple Silicon DMG and installs `barklarm.app`.
+Barklarm is published as an Apple Silicon DMG and installs `Barklarm.app`.
 
 ## Upgrade
 
