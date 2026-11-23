@@ -1,6 +1,6 @@
 cask "opencode-cloudlink" do
   version "0.1.35"
-  sha256 "124cf6fc20681760f12d5bd186e28a9f606e94853e51810d2d24020cf179c0b8"
+  sha256 "fee00ac27a2410c0b588f9c1a552a74ad6c4c52d5edd73a7d8cb1d2a405ec48b"
 
   url "https://github.com/alvarolorentedev/opencode-cloud-link-releases/releases/download/v#{version}/opencode-cloudlink_darwin_universal.dmg"
   name "OpenCode CloudLink"
